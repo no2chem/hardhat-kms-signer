@@ -1,10 +1,26 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KMSSigner = void 0;
-const common_1 = __importDefault(require("@ethereumjs/common"));
+const common_1 = __importStar(require("@ethereumjs/common"));
 const tx_1 = require("@ethereumjs/tx");
 const ethereumjs_util_1 = require("ethereumjs-util");
 const base_types_1 = require("hardhat/internal/core/jsonrpc/types/base-types");
@@ -31,7 +47,9 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 txRequest.nonce = await this._getNonce(txRequest.from);
             }
             const txOptions = common_1.default.custom({
-                chainId: await this._getChainId()
+                chainId: await this._getChainId(),
+            }, {
+                hardfork: common_1.Hardfork.London
             });
             const txParams = lodash_1.pick(txRequest, [
                 "from",
