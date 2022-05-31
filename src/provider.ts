@@ -38,9 +38,8 @@ export class KMSSigner extends ProviderWrapperWithChainId {
       if (txRequest.nonce === undefined) {
         txRequest.nonce = await this._getNonce(txRequest.from);
       }
-      const txOptions = new Common({
-        chain: await this._getChainId(),
-        hardfork: Hardfork.London,
+      const txOptions = Common.custom({
+        chainId: await this._getChainId()
       });
 
       const txParams: FeeMarketEIP1559TxData = pick(txRequest, [
