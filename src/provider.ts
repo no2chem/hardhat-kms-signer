@@ -55,6 +55,7 @@ export class KMSSigner extends ProviderWrapperWithChainId {
         "maxFeePerGas",
         "maxPriorityFeePerGas",
       ]);
+      txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
       txParams.gasLimit = txRequest.gas;
       const txf = FeeMarketEIP1559Transaction.fromTxData(txParams, {
         common: txOptions,
