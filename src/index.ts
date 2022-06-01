@@ -29,6 +29,9 @@ extendConfig(
       if (network.kmsKeyId) {
         config.networks[networkName].kmsKeyId = network.kmsKeyId;
       }
+      if (network.hardfork) {
+        config.networks[networkName].hardfork = network.hardfork;
+      }
     }
   }
 );
@@ -45,7 +48,7 @@ extendEnvironment((hre) => {
     let wrappedProvider: EIP1193Provider;
     wrappedProvider = new KMSSigner(
       eip1193Provider,
-      hre.network.config.kmsKeyId
+      hre.network.config
     );
     wrappedProvider = new AutomaticGasProvider(
       wrappedProvider,

@@ -2,6 +2,7 @@ import Common, { Hardfork } from "@ethereumjs/common";
 import {
   FeeMarketEIP1559Transaction,
   FeeMarketEIP1559TxData,
+  Transaction
 } from "@ethereumjs/tx";
 import { BN, bufferToHex } from "ethereumjs-util";
 import { rpcQuantityToBN } from "hardhat/internal/core/jsonrpc/types/base-types";
@@ -9,18 +10,16 @@ import { rpcTransactionRequest } from "hardhat/internal/core/jsonrpc/types/input
 import { validateParams } from "hardhat/internal/core/jsonrpc/types/input/validation";
 import { JsonRpcTransactionData } from "hardhat/internal/core/providers/accounts";
 import { ProviderWrapperWithChainId } from "hardhat/internal/core/providers/chainId";
-import { EIP1193Provider, RequestArguments } from "hardhat/types";
+import { EIP1193Provider, NetworkConfig, RequestArguments } from "hardhat/types";
 import { pick } from "lodash";
 
 import { createSignature, getEthAddressFromKMS } from "./kms";
 
 export class KMSSigner extends ProviderWrapperWithChainId {
-  public kmsKeyId: string;
   public ethAddress?: string;
 
-  constructor(provider: EIP1193Provider, kmsKeyId: string) {
+  constructor(provider: EIP1193Provider, public config : NetworkConfig) {
     super(provider);
-    this.kmsKeyId = kmsKeyId;
   }
 
   public async request(args: RequestArguments): Promise<unknown> {
@@ -42,41 +41,61 @@ export class KMSSigner extends ProviderWrapperWithChainId {
       const txOptions = Common.custom({
         chainId: await this._getChainId(),
       }, {
-        hardfork: Hardfork.London
+        hardfork: this.config.hardfork ? this.config.hardfork : Hardfork.London
       });
 
-      const txParams: FeeMarketEIP1559TxData = pick(txRequest, [
-        "from",
-        "to",
-        "value",
-        "nonce",
-        "data",
-        "chainId",
-        "maxFeePerGas",
-        "maxPriorityFeePerGas",
-      ]);
-      txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
-      txParams.gasLimit = txRequest.gas;
-      const txf = FeeMarketEIP1559Transaction.fromTxData(txParams, {
-        common: txOptions,
-      });
+      let signedTx;
 
-      const txSignature = await createSignature({
-        keyId: this.kmsKeyId,
-        message: txf.getMessageToSign(),
-        address: tx.from!,
-        txOpts: txOptions,
-      });
-
-      const signedTx = FeeMarketEIP1559Transaction.fromTxData(
-        {
-          ...txParams,
-          ...txSignature,
-        },
-        {
+      if (txOptions.isActivatedEIP(1559)) {
+        const txParams: FeeMarketEIP1559TxData = pick(txRequest, [
+          "from",
+          "to",
+          "value",
+          "nonce",
+          "data",
+          "chainId",
+          "maxFeePerGas",
+          "maxPriorityFeePerGas",
+        ]);
+        txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
+        txParams.gasLimit = txRequest.gas;
+        const txf = FeeMarketEIP1559Transaction.fromTxData(txParams, {
           common: txOptions,
-        }
-      );
+        });
+
+        const txSignature = await createSignature({
+          keyId: this.config.kmsKeyId!,
+          message: txf.getMessageToSign(),
+          address: tx.from!,
+          txOpts: txOptions,
+        });
+
+        signedTx = FeeMarketEIP1559Transaction.fromTxData(
+          {
+            ...txParams,
+            ...txSignature,
+          },
+          {
+            common: txOptions,
+          }
+        );
+      } else {
+        const txf = Transaction.fromTxData(txRequest, {
+          common : txOptions
+        });
+
+        const txSignature = await createSignature({
+          keyId: this.config.kmsKeyId!,
+          message: txf.getMessageToSign(),
+          address: tx.from!,
+          txOpts: txOptions,
+        });
+
+        signedTx = Transaction.fromTxData({
+          ...txRequest,
+          ...txSignature
+        })
+      }
 
       const rawTx = `0x${signedTx.serialize().toString("hex")}`;
       return this._wrappedProvider.request({
@@ -95,7 +114,7 @@ export class KMSSigner extends ProviderWrapperWithChainId {
 
   private async _getSender(): Promise<string | undefined> {
     if (!this.ethAddress) {
-      this.ethAddress = await getEthAddressFromKMS(this.kmsKeyId);
+      this.ethAddress = await getEthAddressFromKMS(this.config.kmsKeyId!);
     }
     return this.ethAddress;
   }

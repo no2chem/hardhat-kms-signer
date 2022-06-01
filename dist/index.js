@@ -19,6 +19,9 @@ config_1.extendConfig((config, userConfig) => {
         if (network.kmsKeyId) {
             config.networks[networkName].kmsKeyId = network.kmsKeyId;
         }
+        if (network.hardfork) {
+            config.networks[networkName].hardfork = network.hardfork;
+        }
     }
 });
 config_1.extendEnvironment((hre) => {
@@ -26,7 +29,7 @@ config_1.extendEnvironment((hre) => {
         const httpNetConfig = hre.network.config;
         const eip1193Provider = new http_1.HttpProvider(httpNetConfig.url, hre.network.name, httpNetConfig.httpHeaders, httpNetConfig.timeout);
         let wrappedProvider;
-        wrappedProvider = new provider_1.KMSSigner(eip1193Provider, hre.network.config.kmsKeyId);
+        wrappedProvider = new provider_1.KMSSigner(eip1193Provider, hre.network.config);
         wrappedProvider = new gas_providers_1.AutomaticGasProvider(wrappedProvider, hre.network.config.gasMultiplier);
         wrappedProvider = new gas_providers_1.AutomaticGasPriceProvider(wrappedProvider);
         hre.network.provider = new backwards_compatibility_1.BackwardsCompatibilityProviderAdapter(wrappedProvider);

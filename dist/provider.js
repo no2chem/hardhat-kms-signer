@@ -30,9 +30,9 @@ const chainId_1 = require("hardhat/internal/core/providers/chainId");
 const lodash_1 = require("lodash");
 const kms_1 = require("./kms");
 class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
-    constructor(provider, kmsKeyId) {
+    constructor(provider, config) {
         super(provider);
-        this.kmsKeyId = kmsKeyId;
+        this.config = config;
     }
     async request(args) {
         const method = args.method;
@@ -49,32 +49,47 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
             const txOptions = common_1.default.custom({
                 chainId: await this._getChainId(),
             }, {
-                hardfork: common_1.Hardfork.London
+                hardfork: this.config.hardfork ? this.config.hardfork : common_1.Hardfork.London
             });
-            const txParams = lodash_1.pick(txRequest, [
-                "from",
-                "to",
-                "value",
-                "nonce",
-                "data",
-                "chainId",
-                "maxFeePerGas",
-                "maxPriorityFeePerGas",
-            ]);
-            txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
-            txParams.gasLimit = txRequest.gas;
-            const txf = tx_1.FeeMarketEIP1559Transaction.fromTxData(txParams, {
-                common: txOptions,
-            });
-            const txSignature = await kms_1.createSignature({
-                keyId: this.kmsKeyId,
-                message: txf.getMessageToSign(),
-                address: tx.from,
-                txOpts: txOptions,
-            });
-            const signedTx = tx_1.FeeMarketEIP1559Transaction.fromTxData(Object.assign(Object.assign({}, txParams), txSignature), {
-                common: txOptions,
-            });
+            let signedTx;
+            if (txOptions.isActivatedEIP(1559)) {
+                const txParams = lodash_1.pick(txRequest, [
+                    "from",
+                    "to",
+                    "value",
+                    "nonce",
+                    "data",
+                    "chainId",
+                    "maxFeePerGas",
+                    "maxPriorityFeePerGas",
+                ]);
+                txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
+                txParams.gasLimit = txRequest.gas;
+                const txf = tx_1.FeeMarketEIP1559Transaction.fromTxData(txParams, {
+                    common: txOptions,
+                });
+                const txSignature = await kms_1.createSignature({
+                    keyId: this.config.kmsKeyId,
+                    message: txf.getMessageToSign(),
+                    address: tx.from,
+                    txOpts: txOptions,
+                });
+                signedTx = tx_1.FeeMarketEIP1559Transaction.fromTxData(Object.assign(Object.assign({}, txParams), txSignature), {
+                    common: txOptions,
+                });
+            }
+            else {
+                const txf = tx_1.Transaction.fromTxData(txRequest, {
+                    common: txOptions
+                });
+                const txSignature = await kms_1.createSignature({
+                    keyId: this.config.kmsKeyId,
+                    message: txf.getMessageToSign(),
+                    address: tx.from,
+                    txOpts: txOptions,
+                });
+                signedTx = tx_1.Transaction.fromTxData(Object.assign(Object.assign({}, txRequest), txSignature));
+            }
             const rawTx = `0x${signedTx.serialize().toString("hex")}`;
             return this._wrappedProvider.request({
                 method: "eth_sendRawTransaction",
@@ -89,7 +104,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
     }
     async _getSender() {
         if (!this.ethAddress) {
-            this.ethAddress = await kms_1.getEthAddressFromKMS(this.kmsKeyId);
+            this.ethAddress = await kms_1.getEthAddressFromKMS(this.config.kmsKeyId);
         }
         return this.ethAddress;
     }

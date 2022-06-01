@@ -1,9 +1,9 @@
 import { ProviderWrapperWithChainId } from "hardhat/internal/core/providers/chainId";
-import { EIP1193Provider, RequestArguments } from "hardhat/types";
+import { EIP1193Provider, NetworkConfig, RequestArguments } from "hardhat/types";
 export declare class KMSSigner extends ProviderWrapperWithChainId {
-    kmsKeyId: string;
+    config: NetworkConfig;
     ethAddress?: string;
-    constructor(provider: EIP1193Provider, kmsKeyId: string);
+    constructor(provider: EIP1193Provider, config: NetworkConfig);
     request(args: RequestArguments): Promise<unknown>;
     private _getSender;
     private _getNonce;
