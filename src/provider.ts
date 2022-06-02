@@ -1,5 +1,6 @@
 import Common, { Hardfork } from "@ethereumjs/common";
 import {
+  Capability,
   FeeMarketEIP1559Transaction,
   FeeMarketEIP1559TxData,
   Transaction
@@ -80,7 +81,11 @@ export class KMSSigner extends ProviderWrapperWithChainId {
           }
         );
       } else {
-        const txf = Transaction.fromTxData(txRequest, {
+        const txParams = Object.assign({
+          gasLimit: txRequest.gas
+        }, txRequest);
+
+        const txf = Transaction.fromTxData(txParams, {
           common : txOptions
         });
 
@@ -91,13 +96,18 @@ export class KMSSigner extends ProviderWrapperWithChainId {
           txOpts: txOptions,
         });
 
+        txSignature.v = txSignature.v.addn(35).add(txOptions.chainIdBN().muln(2));
+
         signedTx = Transaction.fromTxData({
-          ...txRequest,
+          ...txParams,
           ...txSignature
+        }, {
+          common: txOptions
         })
       }
 
       const rawTx = `0x${signedTx.serialize().toString("hex")}`;
+       Transaction.fromSerializedTx(signedTx.serialize()).supports(Capability.EIP155ReplayProtection);
       return this._wrappedProvider.request({
         method: "eth_sendRawTransaction",
         params: [rawTx],

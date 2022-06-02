@@ -79,7 +79,10 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 });
             }
             else {
-                const txf = tx_1.Transaction.fromTxData(txRequest, {
+                const txParams = Object.assign({
+                    gasLimit: txRequest.gas
+                }, txRequest);
+                const txf = tx_1.Transaction.fromTxData(txParams, {
                     common: txOptions
                 });
                 const txSignature = await kms_1.createSignature({
@@ -88,9 +91,13 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                     address: tx.from,
                     txOpts: txOptions,
                 });
-                signedTx = tx_1.Transaction.fromTxData(Object.assign(Object.assign({}, txRequest), txSignature));
+                txSignature.v = txSignature.v.addn(35).add(txOptions.chainIdBN().muln(2));
+                signedTx = tx_1.Transaction.fromTxData(Object.assign(Object.assign({}, txParams), txSignature), {
+                    common: txOptions
+                });
             }
             const rawTx = `0x${signedTx.serialize().toString("hex")}`;
+            tx_1.Transaction.fromSerializedTx(signedTx.serialize()).supports(tx_1.Capability.EIP155ReplayProtection);
             return this._wrappedProvider.request({
                 method: "eth_sendRawTransaction",
                 params: [rawTx],
