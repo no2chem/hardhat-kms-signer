@@ -39,6 +39,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
         this.config = config;
     }
     async request(args) {
+        var _a, _b;
         const method = args.method;
         const params = this._getParams(args);
         if (method === "eth_sendTransaction") {
@@ -68,7 +69,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                     "maxPriorityFeePerGas",
                 ]);
                 txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
-                txParams.gasLimit = txRequest.gas;
+                txParams.gasLimit = (_a = txRequest.gas) === null || _a === void 0 ? void 0 : _a.muln(this.config.gasMultiplier);
                 const txf = tx_1.FeeMarketEIP1559Transaction.fromTxData(txParams, {
                     common: txOptions,
                 });
@@ -84,7 +85,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
             }
             else {
                 const txParams = Object.assign({
-                    gasLimit: txRequest.gas
+                    gasLimit: (_b = txRequest.gas) === null || _b === void 0 ? void 0 : _b.muln(this.config.gasMultiplier)
                 }, txRequest);
                 const txf = tx_1.Transaction.fromTxData(txParams, {
                     common: txOptions

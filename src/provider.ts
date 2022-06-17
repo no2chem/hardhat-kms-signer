@@ -59,7 +59,7 @@ export class KMSSigner extends ProviderWrapperWithChainId {
           "maxPriorityFeePerGas",
         ]);
         txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
-        txParams.gasLimit = txRequest.gas;
+        txParams.gasLimit = txRequest.gas?.muln(this.config.gasMultiplier);
         const txf = FeeMarketEIP1559Transaction.fromTxData(txParams, {
           common: txOptions,
         });
@@ -82,7 +82,7 @@ export class KMSSigner extends ProviderWrapperWithChainId {
         );
       } else {
         const txParams = Object.assign({
-          gasLimit: txRequest.gas
+          gasLimit: txRequest.gas?.muln(this.config.gasMultiplier)
         }, txRequest);
 
         const txf = Transaction.fromTxData(txParams, {
