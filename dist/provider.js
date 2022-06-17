@@ -71,7 +71,9 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 txParams.maxFeePerGas = txParams.maxFeePerGas ? txParams.maxFeePerGas : txRequest.gasPrice;
                 txParams.gasLimit = (_a = txRequest.gas) === null || _a === void 0 ? void 0 : _a.muln(this.config.gasMultiplier);
                 txParams.maxFeePerGas = this.config.priorityGasFee ? txParams.maxFeePerGas.add(new ethereumjs_util_1.BN(this.config.priorityGasFee)) : txParams.maxFeePerGas;
-                txParams.maxPriorityFeePerGas = this.config.priorityGasFee ? txParams.maxPriorityFeePerGas.add(new ethereumjs_util_1.BN(this.config.priorityGasFee)) : txParams.maxPriorityFeePerGas;
+                if (txParams.maxPriorityFeePerGas) {
+                    txParams.maxPriorityFeePerGas = this.config.priorityGasFee ? txParams.maxPriorityFeePerGas.add(new ethereumjs_util_1.BN(this.config.priorityGasFee)) : txParams.maxPriorityFeePerGas;
+                }
                 const txf = tx_1.FeeMarketEIP1559Transaction.fromTxData(txParams, {
                     common: txOptions,
                 });
