@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -30,7 +34,7 @@ const EcdsaSigAsnParse = asn1.define("EcdsaSig", function () {
 const EcdsaPubKey = asn1.define("EcdsaPubKey", function () {
     this.seq().obj(this.key("algo").seq().obj(this.key("a").objid(), this.key("b").objid()), this.key("pubKey").bitstr());
 });
-exports.recoverPubKeyFromSig = (msg, r, s, v, chainId) => {
+const recoverPubKeyFromSig = (msg, r, s, v, chainId) => {
     const rBuffer = r.toBuffer();
     const sBuffer = s.toBuffer();
     const pubKey = EthUtil.ecrecover(msg, v, rBuffer, sBuffer, chainId);
@@ -38,8 +42,9 @@ exports.recoverPubKeyFromSig = (msg, r, s, v, chainId) => {
     const RecoveredEthAddr = EthUtil.bufferToHex(addrBuf);
     return RecoveredEthAddr;
 };
+exports.recoverPubKeyFromSig = recoverPubKeyFromSig;
 const getRS = async (signParams) => {
-    const signature = await exports.sign(signParams);
+    const signature = await (0, exports.sign)(signParams);
     if (signature.Signature === undefined) {
         throw new Error("Signature is undefined.");
     }
@@ -56,14 +61,14 @@ const getRS = async (signParams) => {
 };
 const getV = (msg, r, s, expectedEthAddr) => {
     let v = 27;
-    let pubKey = exports.recoverPubKeyFromSig(msg, r, s, v);
+    let pubKey = (0, exports.recoverPubKeyFromSig)(msg, r, s, v);
     if (pubKey !== expectedEthAddr) {
         v = 28;
-        pubKey = exports.recoverPubKeyFromSig(msg, r, s, v);
+        pubKey = (0, exports.recoverPubKeyFromSig)(msg, r, s, v);
     }
     return new EthUtil.BN(v - 27);
 };
-exports.getEthAddressFromPublicKey = (publicKey) => {
+const getEthAddressFromPublicKey = (publicKey) => {
     const res = EcdsaPubKey.decode(publicKey, "der");
     let pubKeyBuffer = res.pubKey.data;
     pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length);
@@ -71,15 +76,18 @@ exports.getEthAddressFromPublicKey = (publicKey) => {
     const EthAddr = "0x" + address.slice(-20).toString("hex");
     return EthAddr;
 };
-exports.getPublicKey = (KeyId) => exports.kms.getPublicKey({ KeyId }).promise();
-exports.getEthAddressFromKMS = async (keyId) => {
-    const KMSKey = await exports.getPublicKey(keyId);
+exports.getEthAddressFromPublicKey = getEthAddressFromPublicKey;
+const getPublicKey = (KeyId) => exports.kms.getPublicKey({ KeyId }).promise();
+exports.getPublicKey = getPublicKey;
+const getEthAddressFromKMS = async (keyId) => {
+    const KMSKey = await (0, exports.getPublicKey)(keyId);
     if (!KMSKey.PublicKey) {
         throw new Error("Failed to get PublicKey from KMS");
     }
-    return exports.getEthAddressFromPublicKey(KMSKey.PublicKey);
+    return (0, exports.getEthAddressFromPublicKey)(KMSKey.PublicKey);
 };
-exports.sign = (signParams) => {
+exports.getEthAddressFromKMS = getEthAddressFromKMS;
+const sign = (signParams) => {
     const { keyId, message } = signParams;
     return exports.kms
         .sign({
@@ -90,7 +98,8 @@ exports.sign = (signParams) => {
     })
         .promise();
 };
-exports.createSignature = async (sigParams) => {
+exports.sign = sign;
+const createSignature = async (sigParams) => {
     const { keyId, message, address } = sigParams;
     const { r, s } = await getRS({ keyId, message });
     const v = getV(message, r, s, address);
@@ -100,4 +109,5 @@ exports.createSignature = async (sigParams) => {
         v,
     };
 };
+exports.createSignature = createSignature;
 //# sourceMappingURL=kms.js.map

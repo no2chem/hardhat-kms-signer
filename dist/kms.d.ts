@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="bn.js" />
 import Common from "@ethereumjs/common";
 import { KMS } from "aws-sdk";
 import * as EthUtil from "ethereumjs-util";

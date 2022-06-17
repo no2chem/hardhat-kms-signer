@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -42,7 +46,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
             if (tx !== undefined && tx.from === undefined) {
                 tx.from = await this._getSender();
             }
-            const [txRequest] = validation_1.validateParams(params, transactionRequest_1.rpcTransactionRequest);
+            const [txRequest] = (0, validation_1.validateParams)(params, transactionRequest_1.rpcTransactionRequest);
             if (txRequest.nonce === undefined) {
                 txRequest.nonce = await this._getNonce(txRequest.from);
             }
@@ -53,7 +57,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
             });
             let signedTx;
             if (txOptions.isActivatedEIP(1559)) {
-                const txParams = lodash_1.pick(txRequest, [
+                const txParams = (0, lodash_1.pick)(txRequest, [
                     "from",
                     "to",
                     "value",
@@ -68,7 +72,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 const txf = tx_1.FeeMarketEIP1559Transaction.fromTxData(txParams, {
                     common: txOptions,
                 });
-                const txSignature = await kms_1.createSignature({
+                const txSignature = await (0, kms_1.createSignature)({
                     keyId: this.config.kmsKeyId,
                     message: txf.getMessageToSign(),
                     address: tx.from,
@@ -85,7 +89,7 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 const txf = tx_1.Transaction.fromTxData(txParams, {
                     common: txOptions
                 });
-                const txSignature = await kms_1.createSignature({
+                const txSignature = await (0, kms_1.createSignature)({
                     keyId: this.config.kmsKeyId,
                     message: txf.getMessageToSign(),
                     address: tx.from,
@@ -97,7 +101,6 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
                 });
             }
             const rawTx = `0x${signedTx.serialize().toString("hex")}`;
-            tx_1.Transaction.fromSerializedTx(signedTx.serialize()).supports(tx_1.Capability.EIP155ReplayProtection);
             return this._wrappedProvider.request({
                 method: "eth_sendRawTransaction",
                 params: [rawTx],
@@ -111,16 +114,16 @@ class KMSSigner extends chainId_1.ProviderWrapperWithChainId {
     }
     async _getSender() {
         if (!this.ethAddress) {
-            this.ethAddress = await kms_1.getEthAddressFromKMS(this.config.kmsKeyId);
+            this.ethAddress = await (0, kms_1.getEthAddressFromKMS)(this.config.kmsKeyId);
         }
         return this.ethAddress;
     }
     async _getNonce(address) {
         const response = (await this._wrappedProvider.request({
             method: "eth_getTransactionCount",
-            params: [ethereumjs_util_1.bufferToHex(address), "pending"],
+            params: [(0, ethereumjs_util_1.bufferToHex)(address), "pending"],
         }));
-        return base_types_1.rpcQuantityToBN(response);
+        return (0, base_types_1.rpcQuantityToBN)(response);
     }
 }
 exports.KMSSigner = KMSSigner;

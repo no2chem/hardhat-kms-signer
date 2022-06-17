@@ -6,7 +6,7 @@ const gas_providers_1 = require("hardhat/internal/core/providers/gas-providers")
 const http_1 = require("hardhat/internal/core/providers/http");
 const provider_1 = require("./provider");
 require("./type-extensions");
-config_1.extendConfig((config, userConfig) => {
+(0, config_1.extendConfig)((config, userConfig) => {
     const userNetworks = userConfig.networks;
     if (userNetworks === undefined) {
         return;
@@ -24,7 +24,7 @@ config_1.extendConfig((config, userConfig) => {
         }
     }
 });
-config_1.extendEnvironment((hre) => {
+(0, config_1.extendEnvironment)((hre) => {
     if (hre.network.config.kmsKeyId) {
         const httpNetConfig = hre.network.config;
         const eip1193Provider = new http_1.HttpProvider(httpNetConfig.url, hre.network.name, httpNetConfig.httpHeaders, httpNetConfig.timeout);
