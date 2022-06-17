@@ -107,7 +107,6 @@ export class KMSSigner extends ProviderWrapperWithChainId {
       }
 
       const rawTx = `0x${signedTx.serialize().toString("hex")}`;
-       Transaction.fromSerializedTx(signedTx.serialize()).supports(Capability.EIP155ReplayProtection);
       return this._wrappedProvider.request({
         method: "eth_sendRawTransaction",
         params: [rawTx],
